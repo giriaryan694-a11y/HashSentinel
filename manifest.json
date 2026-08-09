@@ -1,0 +1,16 @@
+{
+  "name": "HashSentinel — File Integrity Checker",
+  "short_name": "HashSentinel",
+  "description": "Client-side file integrity checker supporting MD5, SHA-1, SHA-256, SHA-512 and SHA-3. Nothing ever leaves your device.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0B0F0E",
+  "theme_color": "#0B0F0E",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
