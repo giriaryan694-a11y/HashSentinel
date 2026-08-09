@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HashSentinel — client-side file integrity checker</title>
+<meta name="description" content="Verify file integrity in your browser. MD5, SHA-1, SHA-256, SHA-512 and SHA-3 — nothing ever leaves your device.">
+<meta name="theme-color" content="#0B0F0E">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="scanlines" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <img src="icons/icon.svg" alt="" class="brand-mark" width="34" height="34">
+    <div class="brand-text">
+      <span class="brand-name">HashSentinel</span>
+      <span class="brand-tag">client-side file integrity checker</span>
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <button id="installBtn" class="btn btn-ghost hidden" type="button">
+      <span class="ic">⇩</span> Install app
+    </button>
+    <button id="themeToggle" class="btn btn-icon" type="button" aria-label="Toggle eye-saver light theme">
+      <span id="themeIcon">☾</span>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">100% offline &middot; runs in your browser sandbox &middot; nothing is uploaded</p>
+    <h1>Verify a file matches what it's supposed to be.</h1>
+    <p class="lede">
+      Drop a file, pick an algorithm, paste the hash you were given &mdash; HashSentinel
+      computes the digest locally using your browser's own crypto engine and tells you
+      if it's a match, a mismatch, or a red flag.
+    </p>
+  </section>
+
+  <section class="workbench">
+
+    <!-- LEFT: file intake -->
+    <div class="panel" id="dropPanel">
+      <h2 class="panel-title"><span class="idx">01</span> Select a file</h2>
+
+      <div id="dropZone" class="dropzone" tabindex="0" role="button" aria-label="Choose a file to check">
+        <div class="dropzone-inner">
+          <div class="dropzone-icon">⇪</div>
+          <p class="dropzone-main">Drag &amp; drop a file here</p>
+          <p class="dropzone-sub">or click / tap to browse &mdash; your file never leaves this tab</p>
+        </div>
+        <input type="file" id="fileInput" class="visually-hidden" aria-hidden="true">
+      </div>
+
+      <div id="fileInfo" class="file-info hidden">
+        <div class="file-info-row">
+          <span class="file-icon">▤</span>
+          <div class="file-meta">
+            <p id="fileName" class="file-name">—</p>
+            <p id="fileMeta" class="file-sub">—</p>
+          </div>
+          <button id="clearFile" class="btn btn-icon btn-small" type="button" aria-label="Remove file">✕</button>
+        </div>
+        <div class="progress-track hidden" id="progressTrack">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: algorithm + expected hash -->
+    <div class="panel" id="configPanel">
+      <h2 class="panel-title"><span class="idx">02</span> Choose algorithm &amp; expected hash</h2>
+
+      <label class="field-label" for="algoSelect">Hash algorithm</label>
+      <select id="algoSelect" class="select">
+        <option value="MD5">MD5 — 128-bit (legacy)</option>
+        <option value="SHA-1">SHA-1 — 160-bit (legacy)</option>
+        <option value="SHA-256" selected>SHA-2 / SHA-256 — 256-bit (recommended)</option>
+        <option value="SHA-512">SHA-2 / SHA-512 — 512-bit</option>
+        <option value="SHA3-256">SHA-3 / SHA3-256 — 256-bit</option>
+      </select>
+
+      <div id="collisionWarning" class="alert alert-warning hidden" role="alert">
+        <span class="alert-icon">⚠</span>
+        <div>
+          <p class="alert-title">Known collision weaknesses</p>
+          <p class="alert-body" id="collisionText"></p>
+        </div>
+      </div>
+
+      <label class="field-label" for="expectedHash">Expected hash value</label>
+      <input
+        type="text"
+        id="expectedHash"
+        class="input mono"
+        placeholder="Paste the hash you were given, e.g. from a download page or checksum file"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+      >
+
+      <button id="verifyBtn" class="btn btn-primary btn-full" type="button" disabled>
+        Verify integrity
+      </button>
+    </div>
+
+  </section>
+
+  <!-- RESULT SEAL -->
+  <section id="resultSection" class="result-section hidden">
+    <div class="panel result-panel">
+      <div class="seal-wrap">
+        <div id="seal" class="seal"></div>
+      </div>
+      <div class="result-body">
+        <p id="resultStatus" class="result-status">—</p>
+        <p id="resultSub" class="result-sub"></p>
+
+        <div class="hash-row">
+          <span class="hash-label">Computed</span>
+          <code id="computedHash" class="hash-value mono">—</code>
+          <button class="btn btn-icon btn-small copy-btn" data-target="computedHash" type="button" aria-label="Copy computed hash">⧉</button>
+        </div>
+        <div class="hash-row">
+          <span class="hash-label">Expected</span>
+          <code id="expectedHashEcho" class="hash-value mono">—</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-grid">
+    <div class="panel about-card">
+      <h3>Runs entirely in your browser sandbox</h3>
+      <p>Files are read with the File API and hashed with SubtleCrypto (or an in-memory pure-JS implementation for MD5 / SHA-3). No network request, no upload, no server &mdash; ever. You can disconnect from the internet after the page loads and it still works.</p>
+    </div>
+    <div class="panel about-card">
+      <h3>Why algorithm choice matters</h3>
+      <p>MD5 and SHA-1 are broken against deliberate collision attacks: two different files can be crafted to share the same digest. They're fine for accidental-corruption checks, but don't rely on them to verify a file wasn't tampered with. SHA-256, SHA-512 and SHA-3 have no known practical collision attacks.</p>
+    </div>
+    <div class="panel about-card">
+      <h3>Installable, works offline</h3>
+      <p>HashSentinel is a Progressive Web App. Install it to your device and it keeps working with no connection at all &mdash; the whole tool, including the MD5 / SHA-3 engines, is cached locally.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>HashSentinel &mdash; open-source, client-side, no tracking.</p>
+  <p class="credit">Made by <strong>Aryan Giri</strong> &nbsp;|&nbsp; <a href="https://github.com/giriaryan694-a11y" target="_blank" rel="noopener noreferrer">giriaryan694-a11y</a></p>
+</footer>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/hash-md5.js"></script>
+<script src="js/hash-sha3.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
